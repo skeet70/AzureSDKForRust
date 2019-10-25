@@ -45,7 +45,7 @@ fn code() -> Result<(), Box<dyn Error>> {
     // both as struct or id.
 
     let future = client
-        .create_database("unlikely%%//\\")
+        .create_database("unlikely2%%??")
         .and_then(|db| {
             println!("created database = {:?}", db);
             client.delete_database("something")

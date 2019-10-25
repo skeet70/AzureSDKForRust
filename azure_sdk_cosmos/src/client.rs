@@ -223,11 +223,11 @@ where
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
-        let uri = format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET));
-        println!("uri == {}", uri);
+        let uri = vec!["dbs", database_name, "colls"];
+        println!("uri == {:?}", uri);
 
         let request = self
-            .prepare_request(&uri, hyper::Method::GET, ResourceType::Collections)
+            .prepare_request_vec(&uri, hyper::Method::GET, ResourceType::Collections)
             .body(hyper::Body::empty())?;
 
         trace!("request prepared");
@@ -703,6 +703,28 @@ where
     }
 
     #[inline]
+    fn prepare_request_vec(&self, uri_parts: &[&str], http_method: hyper::Method, resource_type: ResourceType) -> RequestBuilder {
+        let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
+
+        let auth = {
+            let unescaped_uri = uri_parts.join("/");
+            let resource_link = generate_resource_link(&unescaped_uri);
+            generate_authorization(&self.auth_token, &http_method, resource_type, resource_link, &time)
+        };
+
+        let escaped_uri = {
+            let mut escaped_uri = String::new();
+            for part in uri_parts {
+                escaped_uri.push_str(&format!("{}/", utf8_percent_encode(part, COMPLETE_ENCODE_SET)));
+            }
+            //escaped_uri.pop();
+            escaped_uri
+        };
+        println!("escaped_uri == {}", escaped_uri);
+        self.prepare_request_with_signature(&escaped_uri, http_method, &time, &auth)
+    }
+
+    #[inline]
     fn prepare_request(&self, uri_path: &str, http_method: hyper::Method, resource_type: ResourceType) -> RequestBuilder {
         let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
@@ -750,8 +772,9 @@ fn generate_authorization(
     resource_link: &str,
     time: &str,
 ) -> String {
+    println!("resource_link == {}", resource_link);
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
-    trace!("generate_authorization::string_to_sign == {:?}", string_to_sign);
+    println!("generate_authorization::string_to_sign == {:?}", string_to_sign);
 
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
@@ -810,6 +833,8 @@ fn string_to_sign(http_method: &hyper::Method, rt: ResourceType, resource_link: 
 }
 
 fn generate_resource_link(u: &str) -> &str {
+    println!("generate_resource_link({}) called", u);
+
     static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs"];
 
     // store the element only if it does not end with dbs, colls or docs
