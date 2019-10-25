@@ -43,16 +43,8 @@ fn code() -> Result<(), Box<dyn Error>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
+    let future = client.list_collections("unlikely%%//\\").and_then(move |collections| ok(()));
 
-    let future = client
-        .create_database("unlikely%%//\\")
-        .and_then(|db| {
-            println!("created database = {:?}", db);
-            client.delete_database("something")
-        })
-        .map(|_| {
-            println!("database deleted");
-        });
     core.run(future)?;
     Ok(())
 }

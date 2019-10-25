@@ -49,9 +49,7 @@ use self::headers::{
     CONTENT_DISPOSITION, CONTENT_MD5, DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME,
     PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED, SKU_NAME,
 };
-use hyper::header::{
-    HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE,
-};
+use hyper::header::{HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use crate::errors::{check_status_extract_body_2, AzureError, TraversingError};
@@ -70,7 +68,7 @@ use hyper::{Body, Client, Request};
 
 define_encode_set! {
     pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
-        '+', '-', '&'
+        '+', '-', '&', '%'
     }
 }
 

@@ -223,12 +223,11 @@ where
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
+        let uri = format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET));
+        println!("uri == {}", uri);
+
         let request = self
-            .prepare_request(
-                &format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
-                hyper::Method::GET,
-                ResourceType::Collections,
-            )
+            .prepare_request(&uri, hyper::Method::GET, ResourceType::Collections)
             .body(hyper::Body::empty())?;
 
         trace!("request prepared");
