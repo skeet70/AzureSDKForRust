@@ -1,4 +1,4 @@
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Database {
     pub id: String,
     #[serde(rename = "_rid")]
