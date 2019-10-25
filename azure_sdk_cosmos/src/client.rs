@@ -225,7 +225,7 @@ where
         // empty closure.
         let request = self
             .prepare_request(
-                &format!("dbs/{}/colls", database_name),
+                &format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
                 hyper::Method::GET,
                 ResourceType::Collections,
             )
@@ -236,10 +236,13 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn list_collections(&self, database_name: &str) -> impl Future<Item = Vec<Collection>, Error = AzureError> {
-        trace!("list_collections called");
+    pub fn list_collections<T>(&self, database_name: T) -> impl Future<Item = Vec<Collection>, Error = AzureError>
+    where
+        T: AsRef<str>,
+    {
+        trace!("list_collections called (database_name == {})", database_name.as_ref());
 
-        let req = self.list_collections_create_request(database_name);
+        let req = self.list_collections_create_request(database_name.as_ref());
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
@@ -268,10 +271,13 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_database(&self, database_name: &str) -> impl Future<Item = Database, Error = AzureError> {
-        trace!("create_databases called (database_name == {})", database_name);
+    pub fn create_database<T>(&self, database_name: T) -> impl Future<Item = Database, Error = AzureError>
+    where
+        T: AsRef<str>,
+    {
+        trace!("create_databases called (database_name == {})", database_name.as_ref());
 
-        let req = self.create_database_create_request(database_name);
+        let req = self.create_database_create_request(database_name.as_ref());
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
@@ -296,10 +302,13 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn get_database(&self, database_name: &str) -> impl Future<Item = Database, Error = AzureError> {
-        trace!("get_database called (database_name == {})", database_name);
+    pub fn get_database<T>(&self, database_name: T) -> impl Future<Item = Database, Error = AzureError>
+    where
+        T: AsRef<str>,
+    {
+        trace!("get_database called (database_name == {})", database_name.as_ref());
 
-        let req = self.get_database_create_request(database_name);
+        let req = self.get_database_create_request(database_name.as_ref());
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK)
@@ -312,7 +321,11 @@ where
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
         let request = self
-            .prepare_request(&format!("dbs/{}", database_name), hyper::Method::DELETE, ResourceType::Databases)
+            .prepare_request(
+                &format!("dbs/{}", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
+                hyper::Method::DELETE,
+                ResourceType::Databases,
+            )
             .body(hyper::Body::empty())?;
 
         trace!("request prepared");
@@ -320,10 +333,13 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn delete_database(&self, database_name: &str) -> impl Future<Item = (), Error = AzureError> {
-        trace!("delete_database called (database_name == {})", database_name);
+    pub fn delete_database<T>(&self, database_name: T) -> impl Future<Item = (), Error = AzureError>
+    where
+        T: AsRef<str>,
+    {
+        trace!("delete_database called (database_name == {})", database_name.as_ref());
 
-        let req = self.delete_database_create_request(database_name);
+        let req = self.delete_database_create_request(database_name.as_ref());
 
         done(req)
             .from_err()
@@ -340,7 +356,11 @@ where
         // which will be provied by perform_request
         let request = self
             .prepare_request(
-                &format!("dbs/{}/colls/{}", database_name, collection_name),
+                &format!(
+                    "dbs/{}/colls/{}",
+                    utf8_percent_encode(database_name, COMPLETE_ENCODE_SET),
+                    utf8_percent_encode(collection_name, COMPLETE_ENCODE_SET)
+                ),
                 hyper::Method::GET,
                 ResourceType::Collections,
             )
@@ -351,14 +371,18 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn get_collection(&self, database_name: &str, collection_name: &str) -> impl Future<Item = Collection, Error = AzureError> {
+    pub fn get_collection<R, T>(&self, database_name: R, collection_name: T) -> impl Future<Item = Collection, Error = AzureError>
+    where
+        R: AsRef<str>,
+        T: AsRef<str>,
+    {
         trace!(
             "get_collection called (database_name == {}, collection_name == {})",
-            database_name,
-            collection_name
+            database_name.as_ref(),
+            collection_name.as_ref()
         );
 
-        let req = self.get_collection_create_request(database_name, collection_name);
+        let req = self.get_collection_create_request(database_name.as_ref(), collection_name.as_ref());
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK)
@@ -380,7 +404,7 @@ where
         trace!("collection_serialized == {}", collection_serialized);
 
         let mut request = self.prepare_request(
-            &format!("dbs/{}/colls", database_name),
+            &format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
             hyper::Method::POST,
             ResourceType::Collections,
         );
@@ -392,21 +416,24 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_collection(
+    pub fn create_collection<T>(
         &self,
-        database_name: &str,
+        database_name: T,
         required_throughput: u64,
         collection: &Collection,
-    ) -> impl Future<Item = Collection, Error = AzureError> {
+    ) -> impl Future<Item = Collection, Error = AzureError>
+    where
+        T: AsRef<str>,
+    {
         trace!(
             "create_collection(database_name == {:?}, \
              required_throughput == {:?}, collection == {:?} called",
-            database_name,
+            database_name.as_ref(),
             required_throughput,
             collection
         );
 
-        let req = self.create_collection_create_request(database_name, required_throughput, collection);
+        let req = self.create_collection_create_request(database_name.as_ref(), required_throughput, collection);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
@@ -424,7 +451,11 @@ where
         // Standard headers (auth and version) will be provied by perform_request
         let request = self
             .prepare_request(
-                &format!("dbs/{}/colls/{}", database_name, collection_name),
+                &format!(
+                    "dbs/{}/colls/{}",
+                    utf8_percent_encode(database_name, COMPLETE_ENCODE_SET),
+                    utf8_percent_encode(collection_name, COMPLETE_ENCODE_SET)
+                ),
                 hyper::Method::DELETE,
                 ResourceType::Collections,
             )
@@ -435,14 +466,18 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn delete_collection(&self, database_name: &str, collection_name: &str) -> impl Future<Item = (), Error = AzureError> {
+    pub fn delete_collection<R, T>(&self, database_name: R, collection_name: T) -> impl Future<Item = (), Error = AzureError>
+    where
+        R: AsRef<str>,
+        T: AsRef<str>,
+    {
         trace!(
             "delete_collection called (database_name == {}, collection_name == {}",
-            database_name,
-            collection_name
+            database_name.as_ref(),
+            collection_name.as_ref()
         );
 
-        let req = self.delete_collection_create_request(database_name, collection_name);
+        let req = self.delete_collection_create_request(database_name.as_ref(), collection_name.as_ref());
 
         done(req)
             .from_err()
@@ -462,7 +497,7 @@ where
 
         let request = self
             .prepare_request(
-                &format!("dbs/{}/colls", database_name),
+                &format!("dbs/{}/colls", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
                 hyper::Method::PUT,
                 ResourceType::Collections,
             )
@@ -473,10 +508,18 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn replace_collection(&self, database_name: &str, collection: &str) -> impl Future<Item = Collection, Error = AzureError> {
-        trace!("replace_collection called");
+    pub fn replace_collection<R, T>(&self, database_name: R, collection: T) -> impl Future<Item = Collection, Error = AzureError>
+    where
+        R: AsRef<str>,
+        T: AsRef<str>,
+    {
+        trace!(
+            "replace_collection called (database_name == {}, collection == {})",
+            database_name.as_ref(),
+            collection.as_ref()
+        );
 
-        let req = self.replace_collection_prepare_request(database_name, collection);
+        let req = self.replace_collection_prepare_request(database_name.as_ref(), collection.as_ref());
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
@@ -486,7 +529,17 @@ where
 
     #[inline]
     fn create_document_as_str_create_request(&self, database: &str, collection: &str) -> RequestBuilder {
-        let uri = format!("dbs/{}/colls/{}/docs", database, collection);
+        trace!(
+            "create_document_as_str_create_request called (database == {}, collection == {})",
+            database,
+            collection
+        );
+
+        let uri = format!(
+            "dbs/{}/colls/{}/docs",
+            utf8_percent_encode(database, COMPLETE_ENCODE_SET),
+            utf8_percent_encode(collection, COMPLETE_ENCODE_SET)
+        );
 
         let request = self.prepare_request(&uri, hyper::Method::POST, ResourceType::Documents);
 
@@ -551,9 +604,9 @@ where
 
         let uri = format!(
             "dbs/{}/colls/{}/docs/{}",
-            database_id.as_ref(),
-            collection_id.as_ref(),
-            document_id.as_ref()
+            utf8_percent_encode(database_id.as_ref(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(collection_id.as_ref(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(document_id.as_ref(), COMPLETE_ENCODE_SET)
         );
 
         let req = self.prepare_request(&uri, hyper::Method::DELETE, ResourceType::Documents);
@@ -592,7 +645,11 @@ where
         trace!("list_documents called(database == {}, collection == {}", database, collection);
 
         let req = self.prepare_request(
-            &format!("dbs/{}/colls/{}/docs", database, collection),
+            &format!(
+                "dbs/{}/colls/{}/docs",
+                utf8_percent_encode(database, COMPLETE_ENCODE_SET),
+                utf8_percent_encode(collection, COMPLETE_ENCODE_SET)
+            ),
             hyper::Method::GET,
             ResourceType::Documents,
         );
@@ -611,7 +668,12 @@ where
         let doc_id = document_id.as_ref();
 
         let req = self.prepare_request(
-            &format!("dbs/{}/colls/{}/docs/{}", db, coll, doc_id),
+            &format!(
+                "dbs/{}/colls/{}/docs/{}",
+                utf8_percent_encode(db, COMPLETE_ENCODE_SET),
+                utf8_percent_encode(coll, COMPLETE_ENCODE_SET),
+                utf8_percent_encode(doc_id, COMPLETE_ENCODE_SET)
+            ),
             hyper::Method::GET,
             ResourceType::Documents,
         );
@@ -629,7 +691,11 @@ where
         let collection = collection.as_ref();
 
         let req = self.prepare_request(
-            &format!("dbs/{}/colls/{}/docs", database, collection),
+            &format!(
+                "dbs/{}/colls/{}/docs",
+                utf8_percent_encode(database, COMPLETE_ENCODE_SET),
+                utf8_percent_encode(collection, COMPLETE_ENCODE_SET)
+            ),
             hyper::Method::POST,
             ResourceType::Documents,
         );
@@ -653,9 +719,9 @@ where
         let req = self.prepare_request(
             &format!(
                 "dbs/{}/colls/{}/sprocs/{}",
-                database.as_ref(),
-                collection.as_ref(),
-                sproc_name.as_ref()
+                utf8_percent_encode(database.as_ref(), COMPLETE_ENCODE_SET),
+                utf8_percent_encode(collection.as_ref(), COMPLETE_ENCODE_SET),
+                utf8_percent_encode(sproc_name.as_ref(), COMPLETE_ENCODE_SET),
             ),
             hyper::Method::POST,
             ResourceType::StoredProcedures,
