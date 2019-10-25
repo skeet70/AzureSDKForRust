@@ -284,7 +284,11 @@ where
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
         let request = self
-            .prepare_request(&format!("dbs/{}", database_name), hyper::Method::GET, ResourceType::Databases)
+            .prepare_request(
+                &format!("dbs/{}", utf8_percent_encode(database_name, COMPLETE_ENCODE_SET)),
+                hyper::Method::GET,
+                ResourceType::Databases,
+            )
             .body(hyper::Body::empty())?;
 
         trace!("request prepared");
