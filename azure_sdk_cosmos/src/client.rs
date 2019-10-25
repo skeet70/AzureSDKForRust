@@ -236,13 +236,10 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn list_collections<T>(&self, database_name: T) -> impl Future<Item = Vec<Collection>, Error = AzureError>
-    where
-        T: AsRef<str>,
-    {
-        trace!("list_collections called (database_name == {})", database_name.as_ref());
+    pub fn list_collections(&self, database_name: &str) -> impl Future<Item = Vec<Collection>, Error = AzureError> {
+        trace!("list_collections called (database_name == {})", database_name);
 
-        let req = self.list_collections_create_request(database_name.as_ref());
+        let req = self.list_collections_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
@@ -271,13 +268,10 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_database<T>(&self, database_name: T) -> impl Future<Item = Database, Error = AzureError>
-    where
-        T: AsRef<str>,
-    {
-        trace!("create_databases called (database_name == {})", database_name.as_ref());
+    pub fn create_database(&self, database_name: &str) -> impl Future<Item = Database, Error = AzureError> {
+        trace!("create_databases called (database_name == {})", database_name);
 
-        let req = self.create_database_create_request(database_name.as_ref());
+        let req = self.create_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
@@ -302,13 +296,10 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn get_database<T>(&self, database_name: T) -> impl Future<Item = Database, Error = AzureError>
-    where
-        T: AsRef<str>,
-    {
-        trace!("get_database called (database_name == {})", database_name.as_ref());
+    pub fn get_database(&self, database_name: &str) -> impl Future<Item = Database, Error = AzureError> {
+        trace!("get_database called (database_name == {})", database_name);
 
-        let req = self.get_database_create_request(database_name.as_ref());
+        let req = self.get_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK)
@@ -333,13 +324,10 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn delete_database<T>(&self, database_name: T) -> impl Future<Item = (), Error = AzureError>
-    where
-        T: AsRef<str>,
-    {
-        trace!("delete_database called (database_name == {})", database_name.as_ref());
+    pub fn delete_database(&self, database_name: &str) -> impl Future<Item = (), Error = AzureError> {
+        trace!("delete_database called (database_name == {})", database_name);
 
-        let req = self.delete_database_create_request(database_name.as_ref());
+        let req = self.delete_database_create_request(database_name);
 
         done(req)
             .from_err()
@@ -371,18 +359,14 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn get_collection<R, T>(&self, database_name: R, collection_name: T) -> impl Future<Item = Collection, Error = AzureError>
-    where
-        R: AsRef<str>,
-        T: AsRef<str>,
-    {
+    pub fn get_collection(&self, database_name: &str, collection_name: &str) -> impl Future<Item = Collection, Error = AzureError> {
         trace!(
             "get_collection called (database_name == {}, collection_name == {})",
-            database_name.as_ref(),
-            collection_name.as_ref()
+            database_name,
+            collection_name
         );
 
-        let req = self.get_collection_create_request(database_name.as_ref(), collection_name.as_ref());
+        let req = self.get_collection_create_request(database_name, collection_name);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK)
@@ -416,24 +400,21 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_collection<T>(
+    pub fn create_collection(
         &self,
-        database_name: T,
+        database_name: &str,
         required_throughput: u64,
         collection: &Collection,
-    ) -> impl Future<Item = Collection, Error = AzureError>
-    where
-        T: AsRef<str>,
-    {
+    ) -> impl Future<Item = Collection, Error = AzureError> {
         trace!(
             "create_collection(database_name == {:?}, \
              required_throughput == {:?}, collection == {:?} called",
-            database_name.as_ref(),
+            database_name,
             required_throughput,
             collection
         );
 
-        let req = self.create_collection_create_request(database_name.as_ref(), required_throughput, collection);
+        let req = self.create_collection_create_request(database_name, required_throughput, collection);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
@@ -466,18 +447,14 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn delete_collection<R, T>(&self, database_name: R, collection_name: T) -> impl Future<Item = (), Error = AzureError>
-    where
-        R: AsRef<str>,
-        T: AsRef<str>,
-    {
+    pub fn delete_collection(&self, database_name: &str, collection_name: &str) -> impl Future<Item = (), Error = AzureError> {
         trace!(
             "delete_collection called (database_name == {}, collection_name == {}",
-            database_name.as_ref(),
-            collection_name.as_ref()
+            database_name,
+            collection_name
         );
 
-        let req = self.delete_collection_create_request(database_name.as_ref(), collection_name.as_ref());
+        let req = self.delete_collection_create_request(database_name, collection_name);
 
         done(req)
             .from_err()
@@ -508,18 +485,14 @@ where
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn replace_collection<R, T>(&self, database_name: R, collection: T) -> impl Future<Item = Collection, Error = AzureError>
-    where
-        R: AsRef<str>,
-        T: AsRef<str>,
-    {
+    pub fn replace_collection(&self, database_name: &str, collection: &str) -> impl Future<Item = Collection, Error = AzureError> {
         trace!(
             "replace_collection called (database_name == {}, collection == {})",
-            database_name.as_ref(),
-            collection.as_ref()
+            database_name,
+            collection
         );
 
-        let req = self.replace_collection_prepare_request(database_name.as_ref(), collection.as_ref());
+        let req = self.replace_collection_prepare_request(database_name, collection);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)

@@ -51,8 +51,8 @@ fn code() -> Result<(), Box<dyn Error>> {
         // Each Cosmos' database contains so or more collections. We can enumerate them using the
         // list_collection method.
         for db in databases {
-            v.push(client.list_collections(db.id.clone()).map(move |collections| {
-                println!("database {} has {} collection(s)", db.id, collections.len());
+            v.push(client.list_collections(&db.id).map(move |collections| {
+                println!("database {} has {} collection(s)", &db.id, collections.len());
 
                 for collection in collections {
                     println!("\tcollection {}", collection.id);
