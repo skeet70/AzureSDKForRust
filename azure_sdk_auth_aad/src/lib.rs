@@ -4,25 +4,23 @@ extern crate failure;
 extern crate serde_derive;
 extern crate log;
 use azure_sdk_core::errors::AzureError;
-use futures::future::{done, ok, Future};
 use log::debug;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
 use oauth2::{
-    AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, TokenUrl,
+    AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
+    PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
 use std::str::FromStr;
 use url::form_urlencoded;
 use url::Url;
 mod login_response;
-use azure_sdk_core::perform_http_request;
-use http::status::StatusCode;
-use hyper::{Body, Client, Request};
 pub use login_response::*;
 use std::sync::Arc;
 pub mod errors;
 mod naive_server;
 pub use naive_server::naive_server;
+use reqwest;
 
 #[derive(Debug)]
 pub struct AuthObj {
@@ -32,13 +30,26 @@ pub struct AuthObj {
     pub pkce_code_verifier: PkceCodeVerifier,
 }
 
-pub fn authorize_delegate(client_id: ClientId, client_secret: ClientSecret, tenant_id: &str, redirect_url: Url, resource: &str) -> AuthObj {
+pub fn authorize_delegate(
+    client_id: ClientId,
+    client_secret: ClientSecret,
+    tenant_id: &str,
+    redirect_url: Url,
+    resource: &str,
+) -> AuthObj {
     let auth_url = AuthUrl::new(
-        Url::parse(&format!("https://login.microsoftonline.com/{}/oauth2/authorize", tenant_id))
-            .expect("Invalid authorization endpoint URL"),
+        Url::parse(&format!(
+            "https://login.microsoftonline.com/{}/oauth2/authorize",
+            tenant_id
+        ))
+        .expect("Invalid authorization endpoint URL"),
     );
     let token_url = TokenUrl::new(
-        Url::parse(&format!("https://login.microsoftonline.com/{}/oauth2/v2.0/token", tenant_id)).expect("Invalid token endpoint URL"),
+        Url::parse(&format!(
+            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+            tenant_id
+        ))
+        .expect("Invalid token endpoint URL"),
     );
 
     // Set up the config for the Microsoft Graph OAuth2 process.
@@ -72,7 +83,10 @@ pub fn exchange(
     code: AuthorizationCode,
 ) -> Result<
     oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
-    oauth2::RequestTokenError<oauth2::reqwest::Error, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>,
+    oauth2::RequestTokenError<
+        oauth2::reqwest::Error,
+        oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
+    >,
 > {
     // Exchange the code with a token.
     let token = auth_obj
@@ -86,14 +100,14 @@ pub fn exchange(
     token
 }
 
-pub fn authorize_non_interactive(
-    client: Arc<Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>>,
+pub async fn authorize_non_interactive(
+    client: Arc<reqwest::Client>,
     //  grant_type: &str, fixed on "client_credentials",
     client_id: &oauth2::ClientId,
     client_secret: &oauth2::ClientSecret,
     resource: &str,
     tenant_id: &str,
-) -> impl Future<Item = LoginResponse, Error = AzureError> {
+) -> Result<LoginResponse, AzureError> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("grant_type", "client_credentials")
         .append_pair("client_id", client_id.as_str())
@@ -101,22 +115,22 @@ pub fn authorize_non_interactive(
         .append_pair("resource", resource)
         .finish();
 
-    let uri = format!("https://login.microsoftonline.com/{}/oauth2/token", tenant_id);
+    let url = url::Url::parse(&format!(
+        "https://login.microsoftonline.com/{}/oauth2/token",
+        tenant_id
+    ))
+    .unwrap();
 
-    done(
-        Request::builder()
-            .method("POST")
-            .header("ContentType", "Application / WwwFormUrlEncoded")
-            .uri(uri)
-            .body(Body::from(encoded)),
-    )
-    .from_err()
-    .and_then(move |request| {
-        perform_http_request(&client, request, StatusCode::OK).and_then(|resp| {
-            done(LoginResponse::from_str(&resp)).from_err().and_then(|r| {
-                debug!("{:?}", r);
-                ok(r)
-            })
-        })
-    })
+    let resp = client
+        .post(url)
+        .header("ContentType", "Application / WwwFormUrlEncoded")
+        .body(encoded)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+
+    Ok(LoginResponse::from_str(&resp)?)
 }
