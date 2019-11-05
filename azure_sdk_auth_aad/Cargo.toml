@@ -22,6 +22,7 @@ url                  = "2.1.0"
 rand                 = "0.7.2"
 failure              = "0.1.6"
 futures-core-preview = { version = "=0.3.0-alpha.19" }
+futures-preview      = { version = "=0.3.0-alpha.19", features = ["compat", "async-await"] }
 http                 = "0.1.19"
 serde                = "1.0.101"
 serde_derive         = "1.0.101"

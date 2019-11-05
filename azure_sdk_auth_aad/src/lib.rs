@@ -19,6 +19,7 @@ pub use login_response::*;
 use std::sync::Arc;
 pub mod errors;
 mod naive_server;
+use futures::compat::Future01CompatExt;
 pub use naive_server::naive_server;
 use reqwest;
 
@@ -78,7 +79,7 @@ pub fn authorize_delegate(
     }
 }
 
-pub fn exchange(
+pub async fn exchange(
     auth_obj: AuthObj,
     code: AuthorizationCode,
 ) -> Result<
@@ -94,7 +95,9 @@ pub fn exchange(
         .exchange_code(code)
         // Send the PKCE code verifier in the token request
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
-        .request(async_http_client);
+        .request_async(async_http_client)
+        .compat()
+        .await?;
 
     debug!("MS Graph returned the following token:\n{:?}\n", token);
     Ok(token)
