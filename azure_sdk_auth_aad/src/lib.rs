@@ -119,18 +119,16 @@ pub async fn authorize_non_interactive(
         "https://login.microsoftonline.com/{}/oauth2/token",
         tenant_id
     ))
-    .unwrap();
+    .map_err(|error| AzureError::GenericErrorWithText(error.to_string()))?;
 
     let resp = client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
 
     Ok(LoginResponse::from_str(&resp)?)
 }
