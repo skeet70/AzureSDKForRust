@@ -6,7 +6,7 @@ extern crate log;
 use azure_sdk_core::errors::AzureError;
 use log::debug;
 use oauth2::basic::BasicClient;
-use oauth2::reqwest::http_client;
+use oauth2::reqwest::async_http_client;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
@@ -94,10 +94,10 @@ pub fn exchange(
         .exchange_code(code)
         // Send the PKCE code verifier in the token request
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
-        .request(http_client);
+        .request(async_http_client);
 
     debug!("MS Graph returned the following token:\n{:?}\n", token);
-    token
+    Ok(token)
 }
 
 pub async fn authorize_non_interactive(
