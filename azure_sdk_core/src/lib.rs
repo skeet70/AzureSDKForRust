@@ -8,7 +8,6 @@ extern crate hyper_rustls;
 extern crate md5;
 extern crate ring;
 extern crate time;
-#[macro_use]
 extern crate url;
 extern crate uuid;
 extern crate xml;
@@ -40,9 +39,8 @@ pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 use std::fmt;
 use std::str::FromStr;
-pub mod range;
-use url::percent_encoding;
 pub mod headers;
+pub mod range;
 use self::headers::{
     ACCOUNT_KIND, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER,
     CACHE_CONTROL, CLIENT_REQUEST_ID, CONTENT_DISPOSITION, CONTENT_MD5, DELETE_SNAPSHOTS,
@@ -67,12 +65,6 @@ pub mod prelude;
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use hyper::{Body, Client, Request};
-
-define_encode_set! {
-    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
-        '+', '-', '&'
-    }
-}
 
 #[macro_export]
 macro_rules! response_from_headers {
