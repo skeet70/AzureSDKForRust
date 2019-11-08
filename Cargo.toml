@@ -1,4 +1,5 @@
 [workspace]
 members = [
   "azure_sdk_core",
+  "azure_sdk_service_bus"
 ]
