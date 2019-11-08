@@ -1,28 +1,12 @@
 #![recursion_limit = "128"]
+#![warn(rust_2018_idioms)]
 
-extern crate base64;
-extern crate chrono;
-extern crate http;
-extern crate hyper;
-extern crate hyper_rustls;
-extern crate md5;
-extern crate ring;
-extern crate time;
-extern crate url;
-extern crate uuid;
-extern crate xml;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate quick_error;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate bytes;
-extern crate serde_json;
-extern crate serde_xml_rs;
-extern crate smallvec;
-
 #[macro_use]
 pub mod errors;
 pub mod parsing;
